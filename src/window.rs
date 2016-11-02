@@ -2,6 +2,36 @@ use std::cmp::{max, min};
 
 use ncurses::*;
 
+pub struct DisplayChar {
+    ch: chtype,
+    attributes: Option<NCURSES_ATTR_T>,
+}
+
+impl DisplayChar {
+    pub fn new(ch: chtype) -> DisplayChar {
+        DisplayChar {
+            ch: ch,
+            attributes: None,
+        }
+    }
+
+    pub fn dim(self) -> DisplayChar {
+        DisplayChar {
+            ch: self.ch,
+            // TODO: preserve existing
+            attributes: Some(A_DIM()),
+        }
+    }
+
+    pub fn bold(self) -> DisplayChar {
+        DisplayChar {
+            ch: self.ch,
+            // TODO: preserve existing
+            attributes: Some(A_BOLD()),
+        }
+    }
+}
+
 pub struct Margins {
     pub top: i32,
     pub right: i32,
@@ -65,9 +95,16 @@ pub trait WindowLike {
         self.refresh()
     }
 
-    fn put_at(&mut self, row: i32, col: i32, c: char) {
+    fn put_at<C: Into<DisplayChar>>(&mut self, row: i32, col: i32, c: C) {
         // TODO: bind and use mvwadd_wch
-        mvwaddch(self.window(), row, col, (c as u32) as chtype);
+        let c = c.into();
+        if let Some(attrs) = c.attributes {
+            wattron(self.window(), attrs);
+        }
+        mvwaddch(self.window(), row, col, c.ch);
+        if let Some(attrs) = c.attributes {
+            wattroff(self.window(), attrs);
+        }
     }
 }
 
@@ -204,7 +241,7 @@ impl Pad {
         }
     }
 
-    pub fn render(&self, window: &WindowLike) {
+    pub fn render<W: WindowLike>(&self, window: &W) {
         let margins = window.margins();
         let scroll = max(0, self.row - window.height());
         prefresh(self.window(),
@@ -257,5 +294,17 @@ impl ScrollingOutput for Pad {
             wscrl(self.window(), 1);
         }
         self.row = min(self.row + 1, self.height() - self.margins().vertical())
+    }
+}
+
+impl Into<DisplayChar> for char {
+    fn into(self) -> DisplayChar {
+        DisplayChar::new((self as u32) as chtype)
+    }
+}
+
+impl Into<DisplayChar> for chtype {
+    fn into(self) -> DisplayChar {
+        DisplayChar::new(self)
     }
 }
