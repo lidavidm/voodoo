@@ -13,7 +13,13 @@ pub fn term_size() -> (i32, i32) {
     (x, y)
 }
 
-pub fn poll_event() -> Option<ncurses::WchResult> {
+pub enum Event {
+    Char(char),
+    SpecialKey(i32),
+    Mouse,
+}
+
+pub fn poll_event() -> Option<Event> {
     // Can't poll non-root screen for key events - it doesn't work
     // anymore (dead link:
     // http://blog.chris.tylers.info/index.php?/archives/212-Using-the-Mouse-with-ncurses.html)
@@ -26,10 +32,15 @@ pub fn poll_event() -> Option<ncurses::WchResult> {
         }
         v => {
             if v >= ncurses::KEY_MIN {
-                Some(ncurses::WchResult::KeyCode(v))
+                if v == ncurses::KEY_MOUSE {
+                    Some(Event::Mouse)
+                }
+                else {
+                    Some(Event::SpecialKey(v))
+                }
             }
             else {
-                Some(ncurses::WchResult::Char(v as u32))
+                std::char::from_u32(v as u32).map(|c| Event::Char(c))
             }
         }
     }
