@@ -64,6 +64,10 @@ pub trait WindowLike {
 
         self.refresh()
     }
+
+    fn put_at(&mut self, row: i32, col: i32, text: &str) {
+        mvwprintw(self.window(), row, col, text);
+    }
 }
 
 pub trait ScrollingOutput: WindowLike {
