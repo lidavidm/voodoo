@@ -1,6 +1,7 @@
 extern crate ncurses;
 
 pub mod input;
+pub mod terminal;
 pub mod window;
 
 pub fn term_size() -> (i32, i32) {
