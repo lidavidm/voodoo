@@ -65,8 +65,9 @@ pub trait WindowLike {
         self.refresh()
     }
 
-    fn put_at(&mut self, row: i32, col: i32, text: &str) {
-        mvwprintw(self.window(), row, col, text);
+    fn put_at(&mut self, row: i32, col: i32, c: char) {
+        // TODO: bind and use mvwadd_wch
+        mvwaddch(self.window(), row, col, (c as u32) as chtype);
     }
 }
 
