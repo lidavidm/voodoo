@@ -1,8 +1,9 @@
-use termion;
+use std::io::{stdout, stdin};
 
+use termion;
+use termion::color::Color;
 use termion::input::{MouseTerminal};
 use termion::raw::{IntoRawMode, RawTerminal};
-use std::io::{stdout, stdin};
 
 pub struct Terminal {
     pub stdin: ::std::io::Stdin,
@@ -33,6 +34,15 @@ impl Terminal {
 
     pub fn clear(&self) {
         print!("{}", termion::clear::All);
+    }
+
+    pub fn clear_color<C: Color>(&self, bg: C) {
+        self.clear();
+        print!("{}", termion::color::Bg(bg));
+        let (_, rows) = termion::terminal_size().unwrap();
+        for _ in 1..rows {
+            print!("{}", termion::clear::All);
+        }
     }
 }
 
