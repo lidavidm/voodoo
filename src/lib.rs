@@ -46,6 +46,32 @@ pub fn poll_event() -> Option<Event> {
     }
 }
 
+pub enum MouseState {
+    Pressed,
+    Released,
+    Clicked,
+}
+
+pub struct MouseEvent {
+    pub x: i32,
+    pub y: i32,
+    pub state: ncurses::mmask_t,
+}
+
+pub fn get_mouse_state() -> MouseEvent {
+    let mut event = ncurses::MEVENT { id: 0, x: 0, y: 0, z: 0, bstate: 0 };
+    let res = ncurses::getmouse(&mut event);
+    if res != 0 {
+        panic!("getmouse");
+    }
+    MouseEvent {
+        x: event.x,
+        y: event.y,
+        state: event.bstate,
+    }
+}
+
+
 #[cfg(test)]
 mod tests {
     #[test]

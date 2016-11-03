@@ -2,6 +2,8 @@ use std::cmp::{max, min};
 
 use ncurses::*;
 
+// TODO: attrs should be a set of enums which are then converted into
+// a bitflag
 pub struct DisplayChar {
     ch: chtype,
     attributes: Option<NCURSES_ATTR_T>,
