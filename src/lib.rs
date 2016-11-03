@@ -1,5 +1,6 @@
 extern crate termion;
 
+pub mod color;
 pub mod terminal;
 pub mod window;
 
