@@ -37,12 +37,8 @@ impl Terminal {
     }
 
     pub fn clear_color<C: Color>(&self, bg: C) {
-        self.clear();
         print!("{}", termion::color::Bg(bg));
-        let (_, rows) = termion::terminal_size().unwrap();
-        for _ in 1..rows {
-            print!("{}", termion::clear::All);
-        }
+        self.clear();
     }
 }
 
