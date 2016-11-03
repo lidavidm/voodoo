@@ -1,312 +1,108 @@
-use std::cmp::{max, min};
+use ::std::cell::Cell;
+use ::std::io::{Write};
+use termion;
+use termion::cursor::Goto;
 
-use ncurses::*;
-
-// TODO: attrs should be a set of enums which are then converted into
-// a bitflag
-pub struct DisplayChar {
-    ch: chtype,
-    attributes: Option<NCURSES_ATTR_T>,
+#[derive(Clone,Copy,Debug,Eq,PartialEq)]
+pub struct Point {
+    pub x: u16,
+    pub y: u16,
 }
 
-impl DisplayChar {
-    pub fn new(ch: chtype) -> DisplayChar {
-        DisplayChar {
-            ch: ch,
-            attributes: None,
-        }
-    }
-
-    pub fn dim(self) -> DisplayChar {
-        DisplayChar {
-            ch: self.ch,
-            // TODO: preserve existing
-            attributes: Some(A_DIM()),
-        }
-    }
-
-    pub fn bold(self) -> DisplayChar {
-        DisplayChar {
-            ch: self.ch,
-            // TODO: preserve existing
-            attributes: Some(A_BOLD()),
-        }
-    }
-}
-
-pub struct Margins {
-    pub top: i32,
-    pub right: i32,
-    pub bottom: i32,
-    pub left: i32,
-}
-
-impl Margins {
-    pub fn horizontal(&self) -> i32 {
-        self.left + self.right
-    }
-
-    pub fn vertical(&self) -> i32 {
-        self.top + self.bottom
-    }
-}
-
-pub struct CursorPos {
-    x: i32,
-    y: i32,
-}
-
-pub trait WindowLike {
-    fn x(&self) -> i32;
-    fn y(&self) -> i32;
-    fn width(&self) -> i32;
-    fn height(&self) -> i32;
-    fn margins(&self) -> &Margins;
-
-    fn cursor_pos(&self) -> CursorPos {
-        let mut x = 0;
-        let mut y = 0;
-        getyx(self.window(), &mut y, &mut x);
-
-        CursorPos {
+impl Point {
+    pub fn new(x: u16, y: u16) -> Point {
+        Point {
             x: x,
             y: y,
         }
     }
 
-    fn window(&self) -> WINDOW;
-    fn refresh(&self);
-
-    fn clear_line(&self) {
-        let cursor = self.cursor_pos();
-        let margins = self.margins();
-        for x in margins.left..self.width() - margins.horizontal() {
-            mvwaddch(self.window(), cursor.y, x, 32);
+    pub fn from_global_frame(&self, p: Point) -> Option<Point> {
+        if p.x < self.x || p.y < self.y {
+            None
         }
-        wmove(self.window(), cursor.y, margins.left);
-        self.refresh()
-    }
-
-    fn print(&mut self, row: i32, text: &str) {
-        let margins = self.margins();
-        wmove(self.window(), row + margins.top, margins.left);
-        self.clear_line();
-
-        wprintw(self.window(), text);
-
-        self.refresh()
-    }
-
-    fn put_at<C: Into<DisplayChar>>(&mut self, row: i32, col: i32, c: C) {
-        // TODO: bind and use mvwadd_wch
-        let c = c.into();
-        if let Some(attrs) = c.attributes {
-            wattron(self.window(), attrs);
-        }
-        mvwaddch(self.window(), row, col, c.ch);
-        if let Some(attrs) = c.attributes {
-            wattroff(self.window(), attrs);
+        else {
+            Some(Point::new(p.x - self.x, p.y - self.y))
         }
     }
 }
 
-pub trait ScrollingOutput: WindowLike {
-    fn current_row(&self) -> i32;
-    fn advance_row(&mut self);
-    fn append(&mut self, text: &str) {
-        {
-            let margins = self.margins();
+#[derive(Clone,Copy,Debug,Eq,PartialEq)]
+pub struct TermCell {
+    c: char,
+}
 
-            wmove(self.window(), self.current_row() + margins.top, margins.left);
-            self.clear_line();
-
-            wprintw(self.window(), text);
-        }
-
-        self.advance_row();
-        self.refresh();
-    }
-
-    fn append_wrap(&mut self, text: &str) {
-        let words: Vec<&str> = text.split_whitespace().collect();
-        let width = (self.width() - self.margins().horizontal()) as usize;
-
-        let mut line = Vec::new();
-        let mut line_width = 0;
-
-        for word in words {
-            if line_width + word.len() + 1 > width {
-                self.append(&line.join(" "));
-                line.drain(..);
-                line_width = 0;
-            }
-            else {
-                line.push(word);
-                line_width += word.len();
-                if line.len() > 1 {
-                    line_width += 1;
-                }
-            }
-        }
-        if !line.is_empty() {
-            self.append(&line.join(" "));
+impl Into<TermCell> for char {
+    fn into(self) -> TermCell {
+        TermCell {
+            c: self,
         }
     }
 }
 
 pub struct Window {
-    x: i32,
-    y: i32,
-    width: i32,
-    height: i32,
-    margins: Margins,
-    window: WINDOW,
+    pub position: Point,
+    pub width: u16,
+    pub height: u16,
+    dirty: Vec<TermCell>,
+    presented: Vec<Cell<TermCell>>,
 }
 
 impl Window {
-    pub fn new(x: i32, y: i32, width: i32, height: i32) -> Window {
+    pub fn new(position: Point, width: u16, height: u16) -> Window {
+        let size = width as usize * height as usize;
+        let dirty = vec![' '.into(); size];
+        let presented = vec![Cell::new(' '.into()); size];
         Window {
-            x: x,
-            y: y,
+            position: position,
             width: width,
             height: height,
-            margins: Margins {
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-            },
-            window: newwin(height, width, y, x),
+            dirty: dirty,
+            presented: presented,
         }
     }
 
-    pub fn box_(&mut self, v: chtype, h: chtype) {
-        self.margins.top = 1;
-        self.margins.left = 1;
-        self.margins.right = 1;
-        self.margins.bottom = 1;
-        box_(self.window, v, h);
-    }
-}
-
-impl WindowLike for Window {
-    fn x(&self) -> i32 {
-        self.x
-    }
-
-    fn y(&self) -> i32 {
-        self.y
-    }
-
-    fn width(&self) -> i32 {
-        self.width
-    }
-
-    fn height(&self) -> i32 {
-        self.height
-    }
-
-    fn margins(&self) -> &Margins {
-        &self.margins
-    }
-
-    fn window(&self) -> WINDOW {
-        self.window
-    }
-
-    fn refresh(&self) {
-        wrefresh(self.window);
-    }
-}
-
-pub struct Pad {
-    window: WINDOW,
-    lines: i32,
-    columns: i32,
-    margins: Margins,
-    row: i32,
-}
-
-impl Pad {
-    pub fn new(lines: i32, columns: i32) -> Pad {
-        Pad {
-            window: newpad(lines, columns),
-            lines: lines,
-            columns: columns,
-            margins: Margins {
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-            },
-            row: 0,
+    pub fn border(&mut self) {
+        let width = self.width;
+        let height = self.height;
+        for y in 2..self.height {
+            self.put_at(Point::new(1, y), '│');
+            self.put_at(Point::new(width, y), '│');
         }
-    }
 
-    pub fn render<W: WindowLike>(&self, window: &W) {
-        let margins = window.margins();
-        let scroll = max(0, self.row - window.height());
-        prefresh(self.window(),
-                 margins.top + scroll, margins.left,
-                 self.margins.top + window.y(),
-                 self.margins.left + window.x(),
-                 window.y() + window.height() - margins.vertical() - 1,
-                 window.x() + window.width() - margins.horizontal() - 1);
-    }
-}
-
-impl WindowLike for Pad {
-    // TODO:
-    fn x(&self) -> i32 {
-        0
-    }
-
-    fn y(&self) -> i32 {
-        0
-    }
-
-    fn width(&self) -> i32 {
-        self.columns
-    }
-
-    fn height(&self) -> i32 {
-        self.lines
-    }
-
-    fn margins(&self) -> &Margins {
-        &self.margins
-    }
-
-    fn window(&self) -> WINDOW {
-        self.window
-    }
-
-    fn refresh(&self) {
-
-    }
-}
-
-impl ScrollingOutput for Pad {
-    fn current_row(&self) -> i32 {
-        self.row
-    }
-
-    fn advance_row(&mut self) {
-        if self.row == self.height() - (self.margins().vertical() + 1) {
-            wscrl(self.window(), 1);
+        for w in 2..self.width {
+            self.put_at(Point::new(w, 1), '─');
+            self.put_at(Point::new(w, height), '─');
         }
-        self.row = min(self.row + 1, self.height() - self.margins().vertical())
-    }
-}
 
-impl Into<DisplayChar> for char {
-    fn into(self) -> DisplayChar {
-        DisplayChar::new((self as u32) as chtype)
+        self.put_at(Point::new(1, 1), '┌');
+        self.put_at(Point::new(width, 1), '┐');
+        self.put_at(Point::new(1, height), '└');
+        self.put_at(Point::new(width, height), '┘');
     }
-}
 
-impl Into<DisplayChar> for chtype {
-    fn into(self) -> DisplayChar {
-        DisplayChar::new(self)
+    pub fn put_at<C: Into<TermCell>>(&mut self, Point { x, y }: Point, c: C) {
+        // TODO: event itself should probably be translated
+        let x = x - 1;
+        let y = y - 1;
+        if x > self.width || y > self.height {
+            self.dirty[0] = 'A'.into();
+            return;
+        }
+        let idx = (y * self.width + x) as usize;
+        self.dirty[idx] = c.into();
+    }
+
+    pub fn refresh(&mut self, stdout: &mut ::std::io::Stdout) {
+        for (idx, (dirty, presented)) in self.dirty.iter().zip(self.presented.iter()).enumerate() {
+            let idx = idx as u16;
+            if *dirty != presented.get() {
+                let row = idx / self.width;
+                let col = idx - row * self.width;
+                write!(stdout, "{}{}", Goto(self.position.x + col + 1, self.position.y + row + 1), dirty.c).unwrap();
+                presented.set(*dirty);
+            }
+        }
+        stdout.flush().unwrap();
     }
 }

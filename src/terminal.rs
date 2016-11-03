@@ -1,11 +1,12 @@
-use ncurses;
+use termion;
 
-#[derive(Debug)]
-pub enum VoodooError {
-    NCursesError,
-}
+use termion::input::{MouseTerminal};
+use termion::raw::{IntoRawMode, RawTerminal};
+use std::io::{stdout, stdin};
 
 pub struct Terminal {
+    pub stdin: ::std::io::Stdin,
+    pub stdout: MouseTerminal<RawTerminal<::std::io::Stdout>>,
 }
 
 pub enum Mode {
@@ -17,39 +18,22 @@ use self::Mode::*;
 
 impl Terminal {
     pub fn new() -> Terminal {
-        ncurses::initscr();
-        Terminal {}
-    }
-
-    pub fn cbreak(&self, mode: Mode) -> Result<(), VoodooError> {
-        let result = match mode {
-            Enabled => ncurses::cbreak(),
-            Disabled => ncurses::nocbreak(),
-        };
-        if result == ncurses::ERR {
-            Err(VoodooError::NCursesError)
-        }
-        else {
-            Ok(())
+        Terminal {
+            stdin: stdin(),
+            stdout: MouseTerminal::from(stdout().into_raw_mode().unwrap()),
         }
     }
 
-    pub fn echo(&self, mode: Mode) -> Result<(), VoodooError> {
-        let result = match mode {
-            Enabled => ncurses::echo(),
-            Disabled => ncurses::noecho(),
+    pub fn cursor(&self, mode: Mode) {
+        match mode {
+            Enabled => print!("{}", termion::cursor::Show),
+            Disabled => print!("{}", termion::cursor::Hide),
         };
-        if result == ncurses::ERR {
-            Err(VoodooError::NCursesError)
-        }
-        else {
-            Ok(())
-        }
     }
 }
 
 impl Drop for Terminal {
     fn drop(&mut self) {
-        ncurses::endwin();
+        self.cursor(Mode::Enabled);
     }
 }
