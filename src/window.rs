@@ -1,7 +1,10 @@
 use ::std::cell::Cell;
 use ::std::io::{Write};
 use termion;
+use termion::color::{Bg, Fg};
 use termion::cursor::Goto;
+
+use color::ColorValue;
 
 #[derive(Clone,Copy,Debug,Eq,PartialEq)]
 pub struct Point {
@@ -30,12 +33,16 @@ impl Point {
 #[derive(Clone,Copy,Debug,Eq,PartialEq)]
 pub struct TermCell {
     c: char,
+    bg: Option<ColorValue>,
+    fg: Option<ColorValue>,
 }
 
 impl Into<TermCell> for char {
     fn into(self) -> TermCell {
         TermCell {
             c: self,
+            bg: None,
+            fg: None,
         }
     }
 }
@@ -99,7 +106,13 @@ impl Window {
             if *dirty != presented.get() {
                 let row = idx / self.width;
                 let col = idx - row * self.width;
-                write!(stdout, "{}{}", Goto(self.position.x + col + 1, self.position.y + row + 1), dirty.c).unwrap();
+                let g = Goto(self.position.x + col + 1, self.position.y + row + 1);
+                match (dirty.bg, dirty.fg) {
+                    (Some(bg), Some(fg)) => write!(stdout, "{}{}{}{}", g, Bg(bg), Fg(fg), dirty.c),
+                    (Some(bg), None) => write!(stdout, "{}{}{}", g, Bg(bg), dirty.c),
+                    (None, Some(fg)) => write!(stdout, "{}{}{}", g, Fg(fg), dirty.c),
+                    (None, None) => write!(stdout, "{}{}", g, dirty.c),
+                }.unwrap();
                 presented.set(*dirty);
             }
         }
