@@ -30,6 +30,10 @@ impl Terminal {
             Disabled => print!("{}", termion::cursor::Hide),
         };
     }
+
+    pub fn clear(&self) {
+        print!("{}", termion::clear::All);
+    }
 }
 
 impl Drop for Terminal {
