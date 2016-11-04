@@ -44,6 +44,7 @@ impl Terminal {
 
 impl Drop for Terminal {
     fn drop(&mut self) {
+        self.clear_color(termion::color::Reset);
         self.cursor(Mode::Enabled);
     }
 }
