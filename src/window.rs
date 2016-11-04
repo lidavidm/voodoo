@@ -32,9 +32,9 @@ impl Point {
 
 #[derive(Clone,Copy,Debug,Eq,PartialEq)]
 pub struct TermCell {
-    c: char,
-    bg: Option<ColorValue>,
-    fg: Option<ColorValue>,
+    pub c: char,
+    pub bg: Option<ColorValue>,
+    pub fg: Option<ColorValue>,
 }
 
 impl Into<TermCell> for char {
@@ -101,6 +101,7 @@ impl Window {
     }
 
     pub fn refresh(&mut self, stdout: &mut ::std::io::Stdout) {
+        // TODO: need to diff colors as well
         for (idx, (dirty, presented)) in self.dirty.iter().zip(self.presented.iter()).enumerate() {
             let idx = idx as u16;
             if *dirty != presented.get() {
