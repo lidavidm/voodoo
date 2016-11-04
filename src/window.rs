@@ -100,6 +100,12 @@ impl Window {
         self.dirty[idx] = c.into();
     }
 
+    pub fn print_at(&mut self, Point { x, y }: Point, s: &str) {
+        for (offset, c) in s.chars().enumerate() {
+            self.put_at(Point { x: x + offset as u16, y: y }, c);
+        }
+    }
+
     pub fn refresh(&mut self, stdout: &mut ::std::io::Stdout) {
         // TODO: need to diff colors as well
         for (idx, (dirty, presented)) in self.dirty.iter().zip(self.presented.iter()).enumerate() {
