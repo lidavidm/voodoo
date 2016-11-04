@@ -108,6 +108,8 @@ impl Window {
                 let row = idx / self.width;
                 let col = idx - row * self.width;
                 let g = Goto(self.position.x + col + 1, self.position.y + row + 1);
+                // TODO: this is rather inefficient
+                write!(stdout, "{}{}", g, Bg(ColorValue::Reset)).unwrap();
                 match (dirty.bg, dirty.fg) {
                     (Some(bg), Some(fg)) => write!(stdout, "{}{}{}{}", g, Bg(bg), Fg(fg), dirty.c),
                     (Some(bg), None) => write!(stdout, "{}{}{}", g, Bg(bg), dirty.c),
