@@ -12,7 +12,7 @@ pub enum ColorValue {
     // AnsiValue(pub u8),
     Black,
     Blue,
-    // Cyan,
+    Cyan,
     Green,
     // LightBlack,
     // LightBlue,
@@ -22,12 +22,12 @@ pub enum ColorValue {
     // LightRed,
     // LightWhite,
     // LightYellow,
-    // Magenta,
+    Magenta,
     Red,
     Reset,
     // Rgb(pub u8, pub u8, pub u8),
     White,
-    // Yellow,
+    Yellow,
 }
 
 use self::ColorValue::*;
@@ -37,8 +37,8 @@ impl Color for ColorValue {
         match *self {
             // AnsiValue(pub u8),
             Black => write!(f, ansi_csi!("30m")),
-            Blue => write!(f, ansi_csi!("40m")),
-            // Cyan,
+            Blue => write!(f, ansi_csi!("34m")),
+            Cyan => write!(f, ansi_csi!("36m")),
             Green => write!(f, ansi_csi!("32m")),
             // LightBlack,
             // LightBlue,
@@ -48,12 +48,12 @@ impl Color for ColorValue {
             // LightRed,
             // LightWhite,
             // LightYellow,
-            // Magenta,
+            Magenta => write!(f, ansi_csi!("35m")),
             Red => write!(f, ansi_csi!("31m")),
             Reset => write!(f, ansi_csi!("39m")),
             // Rgb(pub u8, pub u8, pub u8),
             White => write!(f, ansi_csi!("37m")),
-            // Yellow,
+            Yellow => write!(f, ansi_csi!("33m")),
         }
     }
 
@@ -62,7 +62,7 @@ impl Color for ColorValue {
             // AnsiValue(pub u8),
             Black => write!(f, ansi_csi!("40m")),
             Blue => write!(f, ansi_csi!("44m")),
-            // Cyan,
+            Cyan => write!(f, ansi_csi!("46m")),
             Green => write!(f, ansi_csi!("42m")),
             // LightBlack,
             // LightBlue,
@@ -72,12 +72,12 @@ impl Color for ColorValue {
             // LightRed,
             // LightWhite,
             // LightYellow,
-            // Magenta,
+            Magenta => write!(f, ansi_csi!("45m")),
             Red => write!(f, ansi_csi!("41m")),
             Reset => write!(f, ansi_csi!("40m")),
             // Rgb(pub u8, pub u8, pub u8),
             White => write!(f, ansi_csi!("47m")),
-            // Yellow,
+            Yellow => write!(f, ansi_csi!("43m")),
         }
     }
 }
