@@ -37,12 +37,35 @@ pub struct TermCell {
     pub fg: Option<ColorValue>,
 }
 
+pub struct FormattedString<'a> {
+    pub s: &'a str,
+    pub bg: Option<ColorValue>,
+}
+
 impl Into<TermCell> for char {
     fn into(self) -> TermCell {
         TermCell {
             c: self,
             bg: None,
             fg: None,
+        }
+    }
+}
+
+impl<'a> Into<FormattedString<'a>> for &'a str {
+    fn into(self) -> FormattedString<'a> {
+        FormattedString {
+            s: self,
+            bg: None,
+        }
+    }
+}
+
+impl<'a> Into<FormattedString<'a>> for &'a String {
+    fn into(self) -> FormattedString<'a> {
+        FormattedString {
+            s: self,
+            bg: None,
         }
     }
 }
@@ -100,9 +123,12 @@ impl Window {
         self.dirty[idx] = c.into();
     }
 
-    pub fn print_at(&mut self, Point { x, y }: Point, s: &str) {
-        for (offset, c) in s.chars().enumerate() {
-            self.put_at(Point { x: x + offset as u16, y: y }, c);
+    pub fn print_at<'a, F: Into<FormattedString<'a>>>(&mut self, Point { x, y }: Point, s: F) {
+        let f = s.into();
+        for (offset, c) in f.s.chars().enumerate() {
+            let mut t: TermCell = c.into();
+            t.bg = f.bg;
+            self.put_at(Point { x: x + offset as u16, y: y }, t);
         }
     }
 
