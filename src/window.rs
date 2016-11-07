@@ -92,6 +92,12 @@ impl Window {
         }
     }
 
+    pub fn clear(&mut self) {
+        for cell in self.dirty.iter_mut() {
+            *cell = ' '.into();
+        }
+    }
+
     pub fn border(&mut self) {
         let width = self.width;
         let height = self.height;
