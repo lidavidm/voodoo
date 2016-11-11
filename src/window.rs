@@ -42,6 +42,20 @@ pub struct FormattedString<'a> {
     pub bg: Option<ColorValue>,
 }
 
+impl TermCell {
+    pub fn new(c: char) -> TermCell {
+        c.into()
+    }
+
+    pub fn new_with_bg(c: char, bg: ColorValue) -> TermCell {
+        TermCell {
+            c: c,
+            bg: Some(bg),
+            fg: None,
+        }
+    }
+}
+
 impl Into<TermCell> for char {
     fn into(self) -> TermCell {
         TermCell {
