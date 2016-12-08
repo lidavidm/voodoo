@@ -42,6 +42,16 @@ impl Terminal {
     }
 }
 
+pub fn clear() {
+    print!("{}", termion::clear::All);
+}
+
+pub fn clear_color<C: Color>(bg: C) {
+    print!("{}", termion::color::Bg(bg));
+    clear();
+}
+
+
 impl Drop for Terminal {
     fn drop(&mut self) {
         self.clear_color(termion::color::Reset);
