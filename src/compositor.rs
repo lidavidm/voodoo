@@ -29,7 +29,13 @@ impl Compositor {
     }
 
     pub fn blit(&mut self, pos: Point, width: u16, height: u16, buffer: &[TermCell]) {
-
+        for row_offset in 0..height {
+            let src_offset = (row_offset * width) as usize;
+            let dst_offset = ((pos.y + row_offset) * self.width + pos.x) as usize;
+            let src_slice = &buffer[src_offset..src_offset + width as usize];
+            let dst_slice = &mut self.dirty[dst_offset..dst_offset + width as usize];
+            dst_slice.copy_from_slice(src_slice);
+        }
     }
 
     pub fn refresh(&mut self, stdout: &mut Stdout) {

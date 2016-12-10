@@ -88,26 +88,23 @@ pub struct Window {
     pub position: Point,
     pub width: u16,
     pub height: u16,
-    dirty: Vec<TermCell>,
-    presented: Vec<Cell<TermCell>>,
+    contents: Vec<TermCell>,
 }
 
 impl Window {
     pub fn new(position: Point, width: u16, height: u16) -> Window {
         let size = width as usize * height as usize;
-        let dirty = vec![' '.into(); size];
-        let presented = vec![Cell::new(' '.into()); size];
+        let contents = vec![' '.into(); size];
         Window {
             position: position,
             width: width,
             height: height,
-            dirty: dirty,
-            presented: presented,
+            contents: contents,
         }
     }
 
     pub fn clear(&mut self) {
-        for cell in self.dirty.iter_mut() {
+        for cell in self.contents.iter_mut() {
             *cell = ' '.into();
         }
     }
@@ -136,11 +133,11 @@ impl Window {
         let x = x - 1;
         let y = y - 1;
         if x > self.width || y > self.height {
-            self.dirty[0] = 'A'.into();
+            self.contents[0] = 'A'.into();
             return;
         }
         let idx = (y * self.width + x) as usize;
-        self.dirty[idx] = c.into();
+        self.contents[idx] = c.into();
     }
 
     pub fn print_at<'a, F: Into<FormattedString<'a>>>(&mut self, Point { x, y }: Point, s: F) {
@@ -152,25 +149,7 @@ impl Window {
         }
     }
 
-    pub fn refresh(&mut self, stdout: &mut ::std::io::Stdout) {
-        // TODO: need to diff colors as well
-        for (idx, (dirty, presented)) in self.dirty.iter().zip(self.presented.iter()).enumerate() {
-            let idx = idx as u16;
-            if *dirty != presented.get() {
-                let row = idx / self.width;
-                let col = idx - row * self.width;
-                let g = Goto(self.position.x + col + 1, self.position.y + row + 1);
-                // TODO: this is rather inefficient
-                write!(stdout, "{}{}", g, Bg(ColorValue::Reset)).unwrap();
-                match (dirty.bg, dirty.fg) {
-                    (Some(bg), Some(fg)) => write!(stdout, "{}{}{}{}", g, Bg(bg), Fg(fg), dirty.c),
-                    (Some(bg), None) => write!(stdout, "{}{}{}", g, Bg(bg), dirty.c),
-                    (None, Some(fg)) => write!(stdout, "{}{}{}", g, Fg(fg), dirty.c),
-                    (None, None) => write!(stdout, "{}{}", g, dirty.c),
-                }.unwrap();
-                presented.set(*dirty);
-            }
-        }
-        stdout.flush().unwrap();
+    pub fn refresh(&mut self, compositor: &mut ::compositor::Compositor) {
+        compositor.blit(self.position, self.width, self.height, &self.contents);
     }
 }
