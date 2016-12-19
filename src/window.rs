@@ -21,7 +21,7 @@ impl Point {
     }
 
     pub fn from_global_frame(&self, p: Point) -> Option<Point> {
-        if p.x < self.x || p.y < self.y {
+        if p.x <= self.x || p.y <= self.y {
             None
         }
         else {
