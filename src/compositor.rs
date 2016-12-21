@@ -1,5 +1,5 @@
 use std::cell::Cell;
-use std::io::{Stdout, Write};
+use std::io::Write;
 
 use termion::color::{Bg, Fg};
 use termion::cursor::Goto;
@@ -38,7 +38,7 @@ impl Compositor {
         }
     }
 
-    pub fn refresh(&mut self, stdout: &mut Stdout) {
+    pub fn refresh<W: Write>(&mut self, stdout: &mut W) {
         // TODO: need to diff colors as well
         for (idx, (dirty, presented)) in self.dirty.iter().zip(self.presented.iter()).enumerate() {
             let idx = idx as u16;
