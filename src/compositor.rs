@@ -38,7 +38,11 @@ impl Compositor {
         }
     }
 
-    pub fn refresh<W: Write>(&mut self, stdout: &mut W) {
+    pub fn refresh(&mut self, compositor: &mut ::compositor::Compositor) {
+        compositor.blit(Point::new(0, 0), self.width, self.height, &self.dirty);
+    }
+
+    pub fn display<W: Write>(&mut self, stdout: &mut W) {
         // TODO: need to diff colors as well
         for (idx, (dirty, presented)) in self.dirty.iter().zip(self.presented.iter()).enumerate() {
             let idx = idx as u16;
