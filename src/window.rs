@@ -91,6 +91,7 @@ pub struct Window {
     contents: Vec<TermCell>,
 }
 
+// TODO: document that this is ZERO BASED COORDINATES
 impl Window {
     pub fn new(position: Point, width: u16, height: u16) -> Window {
         let size = width as usize * height as usize;
@@ -110,6 +111,7 @@ impl Window {
     }
 
     pub fn border(&mut self) {
+        // TODO: need to convert coordinates
         let width = self.width;
         let height = self.height;
         for y in 2..self.height {
@@ -130,8 +132,8 @@ impl Window {
 
     pub fn put_at<C: Into<TermCell>>(&mut self, Point { x, y }: Point, c: C) {
         // TODO: event itself should probably be translated
-        let x = x - 1;
-        let y = y - 1;
+        let x = x;
+        let y = y;
         if x > self.width || y > self.height {
             self.contents[0] = 'A'.into();
             return;
