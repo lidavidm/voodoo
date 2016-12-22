@@ -151,7 +151,7 @@ impl Window {
         }
     }
 
-    pub fn refresh(&mut self, compositor: &mut ::compositor::Compositor) {
+    pub fn refresh(&self, compositor: &mut ::compositor::Compositor) {
         compositor.blit(self.position, self.width, self.height, &self.contents);
     }
 }
