@@ -21,6 +21,9 @@ impl Terminal {
     pub fn new() -> (Terminal, Stdin, Stdout) {
         // Save/restore screen
         println!("\x1B[?47h");
+        // Enable all mouse events
+        // TODO: figure out how to get Termion to report them
+        println!("\x1B[?1003h");
         let stdout = MouseTerminal::from(stdout().into_raw_mode().unwrap());
         (Terminal, stdin(), stdout)
     }
@@ -46,6 +49,9 @@ impl Drop for Terminal {
     fn drop(&mut self) {
         self.clear_color(termion::color::Reset);
         self.cursor(Mode::Enabled);
+        // Disable mouse events
+        println!("\x1B[?1003l");
+        // Restore the screen
         println!("\x1B[?47l");
     }
 }
