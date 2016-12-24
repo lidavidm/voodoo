@@ -31,10 +31,18 @@ impl Point {
 }
 
 #[derive(Clone,Copy,Debug,Eq,PartialEq)]
+pub enum Brightness {
+    Bold,
+    Faint,
+    Normal,
+}
+
+#[derive(Clone,Copy,Debug,Eq,PartialEq)]
 pub struct TermCell {
     pub c: char,
     pub bg: Option<ColorValue>,
     pub fg: Option<ColorValue>,
+    pub brightness: Brightness,
 }
 
 pub struct FormattedString<'a> {
@@ -52,6 +60,7 @@ impl TermCell {
             c: c,
             bg: Some(bg),
             fg: None,
+            brightness: Brightness::Normal,
         }
     }
 
@@ -60,6 +69,16 @@ impl TermCell {
             c: self.c,
             bg: self.bg,
             fg: Some(fg),
+            brightness: self.brightness,
+        }
+    }
+
+    pub fn faint(self) -> TermCell {
+         TermCell {
+            c: self.c,
+            bg: self.bg,
+            fg: self.fg,
+            brightness: Brightness::Faint,
         }
     }
 }
@@ -70,6 +89,7 @@ impl Into<TermCell> for char {
             c: self,
             bg: None,
             fg: None,
+            brightness: Brightness::Normal,
         }
     }
 }

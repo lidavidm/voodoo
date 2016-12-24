@@ -3,9 +3,10 @@ use std::io::Write;
 
 use termion::color::{Bg, Fg, Reset};
 use termion::cursor::Goto;
+use termion::style;
 
 use color::ColorValue;
-use window::{Point, TermCell};
+use window::{Brightness, Point, TermCell};
 
 pub struct Compositor {
     width: u16,
@@ -57,12 +58,19 @@ impl Compositor {
                 let g = Goto(col + 1, row + 1);
                 // TODO: this is rather inefficient
                 write!(stdout, "{}{}", g, Bg(ColorValue::Reset)).unwrap();
+                if dirty.brightness == Brightness::Faint {
+                    write!(stdout, "{}", style::Faint).unwrap();
+                }
                 match (dirty.bg, dirty.fg) {
                     (Some(bg), Some(fg)) => write!(stdout, "{}{}{}{}", g, Bg(bg), Fg(fg), dirty.c),
                     (Some(bg), None) => write!(stdout, "{}{}{}", g, Bg(bg), dirty.c),
                     (None, Some(fg)) => write!(stdout, "{}{}{}{}", g, Fg(fg), dirty.c, Fg(Reset)),
                     (None, None) => write!(stdout, "{}{}", g, dirty.c),
                 }.unwrap();
+                if dirty.brightness == Brightness::Faint {
+                    write!(stdout, "{}", style::NoFaint).unwrap();
+                }
+
                 presented.set(*dirty);
             }
         }
