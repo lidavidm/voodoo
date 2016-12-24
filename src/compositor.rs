@@ -38,6 +38,11 @@ impl Compositor {
         }
     }
 
+    pub fn poke(&mut self, pos: Point, cell: TermCell) {
+        let offset = (pos.y * self.width + pos.x) as usize;
+        self.dirty[offset] = cell;
+    }
+
     pub fn refresh(&mut self, compositor: &mut ::compositor::Compositor) {
         compositor.blit(Point::new(0, 0), self.width, self.height, &self.dirty);
     }
