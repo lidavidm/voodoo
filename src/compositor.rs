@@ -1,7 +1,7 @@
 use std::cell::Cell;
 use std::io::Write;
 
-use termion::color::{Bg, Fg};
+use termion::color::{Bg, Fg, Reset};
 use termion::cursor::Goto;
 
 use color::ColorValue;
@@ -60,7 +60,7 @@ impl Compositor {
                 match (dirty.bg, dirty.fg) {
                     (Some(bg), Some(fg)) => write!(stdout, "{}{}{}{}", g, Bg(bg), Fg(fg), dirty.c),
                     (Some(bg), None) => write!(stdout, "{}{}{}", g, Bg(bg), dirty.c),
-                    (None, Some(fg)) => write!(stdout, "{}{}{}", g, Fg(fg), dirty.c),
+                    (None, Some(fg)) => write!(stdout, "{}{}{}{}", g, Fg(fg), dirty.c, Fg(Reset)),
                     (None, None) => write!(stdout, "{}{}", g, dirty.c),
                 }.unwrap();
                 presented.set(*dirty);
