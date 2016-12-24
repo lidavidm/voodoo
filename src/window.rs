@@ -54,6 +54,14 @@ impl TermCell {
             fg: None,
         }
     }
+
+    pub fn with_fg(self, fg: ColorValue) -> TermCell {
+        TermCell {
+            c: self.c,
+            bg: self.bg,
+            fg: Some(fg),
+        }
+    }
 }
 
 impl Into<TermCell> for char {
