@@ -142,20 +142,20 @@ impl Window {
         // TODO: need to convert coordinates
         let width = self.width;
         let height = self.height;
-        for y in 2..self.height {
-            self.put_at(Point::new(1, y), '│');
-            self.put_at(Point::new(width, y), '│');
+        for y in 1..self.height {
+            self.put_at(Point::new(0, y), '│');
+            self.put_at(Point::new(width - 1, y), '│');
         }
 
-        for w in 2..self.width {
-            self.put_at(Point::new(w, 1), '─');
-            self.put_at(Point::new(w, height), '─');
+        for w in 1..self.width {
+            self.put_at(Point::new(w, 0), '─');
+            self.put_at(Point::new(w, height - 1), '─');
         }
 
-        self.put_at(Point::new(1, 1), '┌');
-        self.put_at(Point::new(width, 1), '┐');
-        self.put_at(Point::new(1, height), '└');
-        self.put_at(Point::new(width, height), '┘');
+        self.put_at(Point::new(0, 0), '┌');
+        self.put_at(Point::new(width - 1, 0), '┐');
+        self.put_at(Point::new(0, height - 1), '└');
+        self.put_at(Point::new(width - 1, height - 1), '┘');
     }
 
     pub fn put_at<C: Into<TermCell>>(&mut self, Point { x, y }: Point, c: C) {
