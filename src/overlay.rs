@@ -36,6 +36,22 @@ impl Overlay {
         self.contents[idx] = Some(c.into());
     }
 
+    pub fn blend_at<C: Into<TermCell>>(&mut self, Point { x, y }: Point, c: C) {
+        // TODO: use a full 'style overlay' system not this crap
+        let x = x;
+        let y = y;
+        if x > self.width || y > self.height {
+            return;
+        }
+        let idx = (y * self.width + x) as usize;
+        let mut tc = c.into();
+        if let Some(old) = self.contents[idx] {
+            tc.bg = tc.bg.or(old.bg);
+            tc.fg = tc.fg.or(old.fg);
+        }
+        self.contents[idx] = Some(tc);
+    }
+
     pub fn refresh(&self, compositor: &mut ::compositor::Compositor) {
         for (index, cell) in self.contents.iter().enumerate() {
             let index = index as u16;
