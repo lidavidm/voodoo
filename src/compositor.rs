@@ -50,23 +50,32 @@ impl Compositor {
 
     pub fn display<W: Write>(&mut self, stdout: &mut W) {
         // TODO: need to diff colors as well
+        let mut last_fg = None;
+        let mut last_bg = None;
+
         for (idx, (dirty, presented)) in self.dirty.iter().zip(self.presented.iter()).enumerate() {
             let idx = idx as u16;
             if *dirty != presented.get() {
                 let row = idx / self.width;
                 let col = idx - row * self.width;
                 let g = Goto(col + 1, row + 1);
-                // TODO: this is rather inefficient
-                write!(stdout, "{}{}", g, Bg(ColorValue::Reset)).unwrap();
+
                 if dirty.brightness == Brightness::Faint {
                     write!(stdout, "{}", style::Faint).unwrap();
                 }
-                match (dirty.bg, dirty.fg) {
-                    (Some(bg), Some(fg)) => write!(stdout, "{}{}{}{}", g, Bg(bg), Fg(fg), dirty.c),
-                    (Some(bg), None) => write!(stdout, "{}{}{}", g, Bg(bg), dirty.c),
-                    (None, Some(fg)) => write!(stdout, "{}{}{}{}", g, Fg(fg), dirty.c, Fg(Reset)),
-                    (None, None) => write!(stdout, "{}{}", g, dirty.c),
-                }.unwrap();
+                if dirty.bg != last_bg {
+                    write!(stdout, "{}", if let Some(color) = dirty.bg {
+                        Bg(color)
+                    } else { Bg(ColorValue::Reset) }).unwrap();
+                    last_bg = dirty.bg;
+                }
+                if dirty.fg != last_fg {
+                    write!(stdout, "{}", if let Some(color) = dirty.fg {
+                        Fg(color)
+                    } else { Fg(ColorValue::Reset) }).unwrap();
+                    last_fg = dirty.fg;
+                }
+                write!(stdout, "{}{}", g, dirty.c).unwrap();
                 if dirty.brightness == Brightness::Faint {
                     write!(stdout, "{}", style::NoFaint).unwrap();
                 }
@@ -74,6 +83,7 @@ impl Compositor {
                 presented.set(*dirty);
             }
         }
+        write!(stdout, "{}{}", Fg(ColorValue::Reset), Bg(ColorValue::Reset)).unwrap();
         stdout.flush().unwrap();
     }
 }
