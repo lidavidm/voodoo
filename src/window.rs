@@ -48,6 +48,7 @@ pub struct TermCell {
 pub struct FormattedString<'a> {
     pub s: &'a str,
     pub bg: Option<ColorValue>,
+    pub fg: Option<ColorValue>,
 }
 
 impl TermCell {
@@ -99,6 +100,7 @@ impl<'a> Into<FormattedString<'a>> for &'a str {
         FormattedString {
             s: self,
             bg: None,
+            fg: None,
         }
     }
 }
@@ -108,6 +110,7 @@ impl<'a> Into<FormattedString<'a>> for &'a String {
         FormattedString {
             s: self,
             bg: None,
+            fg: None,
         }
     }
 }
@@ -175,6 +178,7 @@ impl Window {
         for (offset, c) in f.s.chars().enumerate() {
             let mut t: TermCell = c.into();
             t.bg = f.bg;
+            t.fg = f.fg;
             self.put_at(Point { x: x + offset as u16, y: y }, t);
         }
     }
