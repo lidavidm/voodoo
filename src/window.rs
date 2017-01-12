@@ -13,12 +13,6 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-use ::std::cell::Cell;
-use ::std::io::{Write};
-use termion;
-use termion::color::{Bg, Fg};
-use termion::cursor::Goto;
-
 use color::ColorValue;
 
 #[derive(Clone,Copy,Debug,Eq,PartialEq)]

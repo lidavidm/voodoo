@@ -16,7 +16,7 @@
 use std::cell::Cell;
 use std::io::Write;
 
-use termion::color::{Bg, Fg, Reset};
+use termion::color::{Bg, Fg};
 use termion::cursor::Goto;
 use termion::style;
 
